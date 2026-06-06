@@ -105,15 +105,15 @@ def search_inputs():
 
                 RESULTS.append({'filename': path.split(path_separator)[-1], 'path': path, 'type': 'text_match'})
 
-    print('\nChoose a file index or enter "q" to go back :\n')
+   
 
     if not RESULTS: 
-        print('No result matching query ...\n')
+        print('No result matching query ...')
         return
     
     RESULTS.sort(key=lambda x: x.get('type'), reverse=True)
     sepatation_happened = False
-    print(f'##### TEXT MATCH #####\n')
+    print(f'\n##### TEXT MATCH #####\n')
     for idx, r in enumerate(RESULTS):
         
         if not sepatation_happened and r.get('type') == 'path_match':
@@ -124,7 +124,8 @@ def search_inputs():
         
     while True:
 
-        index = input('\n')
+        index = input('\n\nChoose a file index or press "q" to go back : ')
+        print('-' * len('Choose a file index or press "q" to go back :  '))
         if index.strip().lower() == 'q':
             return
 
@@ -134,6 +135,7 @@ def search_inputs():
         except:
             print('Invalid number, try again ...')
             continue
+        
 
     open_file(RESULTS[parsed - 1].get('path'))
     
