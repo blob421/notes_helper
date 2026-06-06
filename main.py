@@ -27,7 +27,31 @@ def main():
     populate_files()
 
     while True:
-        search_inputs()
+        try:
+           search_inputs()
+
+        except KeyboardInterrupt:
+
+            while True:
+                choice = input('\n\nDo you really want to quit ? (yes, no , reload) : ')
+
+                if choice.lower().strip() in ['y', 'yes']:
+                    os._exit(0)
+
+                elif choice.lower().strip() in ['n', 'no']:
+                    break
+
+                elif choice in ['r', 'reload']:
+                    print('\nReloaded ...')
+                    print('\n' + ('-' * 32) + '\n')
+                    populate_files()
+                    break
+
+                else:
+            
+                    continue
+               
+
 
 
 def load_config():
@@ -44,10 +68,10 @@ def load_config():
             while True:
                 
                 confirm = input('yes or no ? ')
-                if confirm.lower().strip() == 'y' or confirm.lower().strip() == 'yes':
+                if confirm.lower().strip() in ['y', 'yes']:
                     break
 
-                elif confirm.lower().strip() == 'n' or confirm.lower().strip() == 'no':
+                elif confirm.lower().strip() in ['n', 'no']:
                     config= run_setup()
                     
                 else: 
@@ -113,19 +137,22 @@ def search_inputs():
     
     RESULTS.sort(key=lambda x: x.get('type'), reverse=True)
     sepatation_happened = False
-    print(f'\n##### TEXT MATCH #####\n')
+
+    if any([r.get('type')== 'text_match' for r in RESULTS]):
+         print(f'\n' + ('#' * 10) + ' TEXT MATCH ' + ('#' * 10) + '\n')
+
     for idx, r in enumerate(RESULTS):
         
         if not sepatation_happened and r.get('type') == 'path_match':
-            print(f'\n##### PATH MATCH #####\n')
+            print(f'\n' + ('#' * 10) + ' PATH MATCH ' + ('#' * 10) + '\n')
             sepatation_happened = True
         print(f"{idx + 1})  {r.get('filename')}")
 
         
     while True:
 
-        index = input('\n\nChoose a file index or press "q" to go back : ')
-        print('-' * len('Choose a file index or press "q" to go back :  '))
+        index = input('\n\nEnter a number or press "q" to go back : ')
+        print('-' * len('Enter a number or press "q" to go back :  '))
         if index.strip().lower() == 'q':
             return
 
