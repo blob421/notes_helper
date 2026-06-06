@@ -101,8 +101,8 @@ def search_inputs():
 
                 RESULTS.append({'filename': path.split(path_separator)[-1], 'path': path, 'type': 'path_match'})
 
-            if (string in words or string in path.split(path_separator)[-1]):
-
+            elif (string in words or string in path.split(path_separator)[-1]):
+                
                 RESULTS.append({'filename': path.split(path_separator)[-1], 'path': path, 'type': 'text_match'})
 
    
