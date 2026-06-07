@@ -100,6 +100,8 @@ def run_setup():
 
 def populate_files():
     global FILES
+    FILES.clear()
+    RESULTS.clear()
 
     for root, _, files in os.walk(CONFIG.get('path')):
         for f in files:
@@ -111,7 +113,9 @@ def populate_files():
 def search_inputs():
     global FILES, RESULTS
     RESULTS.clear()
-    string = input('\nSearch : ').strip().lower()
+    string = input('\nSearch (e.g. tools docker) : ').strip().lower()
+    split_str = string.split(" ")
+
 
     for path in FILES:
         with open(path, 'r') as f:
@@ -120,14 +124,28 @@ def search_inputs():
 
             subbed_path = re.sub(rf'(^{re.escape(CONFIG.get("path"))})(.+)', r'\2', path).lower()
             split_path = subbed_path.split(path_separator)
+
+            file_name = split_path[-1].split('.')[0]
             
-            if (string in split_path) or (string in subbed_path.split('.')[-2]):
+            filename_tokens = get_filename_tokens(file_name)
+            if not filename_tokens:
+                continue
+            
+            if len(split_str) > 1:
+                if split_str[0] in split_path and split_str[1] in filename_tokens:
+                 
+                    update_results(path, 'path_match')
 
-                RESULTS.append({'filename': path.split(path_separator)[-1], 'path': path, 'type': 'path_match'})
+                elif split_str[0] in split_path and split_str[1] in words:
+                    update_results(path, 'text_match')
+            
+            elif (string in split_path) or (string in filename_tokens):
 
-            elif (string in words or string in path.split(path_separator)[-1]):
+                update_results(path, 'path_match')
+
+            elif (string in words or string in filename_tokens):
                 
-                RESULTS.append({'filename': path.split(path_separator)[-1], 'path': path, 'type': 'text_match'})
+                update_results(path, 'text_match')
 
    
 
@@ -167,12 +185,41 @@ def search_inputs():
     open_file(RESULTS[parsed - 1].get('path'))
     
            
+def update_results(path:str, type:str):
+    global RESULTS
+    if type == 'path_match':
+        RESULTS.append({'filename': path.split(path_separator)[-1], 'path': path, 'type': 'path_match'})
+    else:
+        RESULTS.append({'filename': path.split(path_separator)[-1], 'path': path, 'type': 'text_match'})
+
 
 def open_file(path):
     program = "mousepad" if not is_windows_os else 'notepad.exe'
 
     subprocess.Popen([program, path]) 
 
+def get_filename_tokens(fname:str):
+
+    if '.' in fname:
+        print(f'Dots detected in {fname}, only underscores or spaces are allowed ...')
+        return None
+    
+    if '-' in fname:
+        print(f'Dash detected in {fname}, only underscores or spaces are allowed ...')
+        return None        
+    
+    elif '_' in fname and not " " in fname:
+        return fname.split('_')
+    
+    elif ' ' in fname and not '_' in fname:
+        return fname.split(' ')
+
+    elif '_' in fname and ' ' in fname: 
+
+        return [token for chunk in fname.split(' ') for token in chunk.split('_')]
+      
+    else:
+        return [fname]
 
 main()
 
