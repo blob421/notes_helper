@@ -14,17 +14,17 @@ File naming convention:
 ------------------------------------
 Separated by underscores and spaces:
 
-Os and sys.md (works)
-os.txt        (works)
-os_and_sys.md (works)
-os_and sys.md (works)
+- Os and sys.md (works)
+- os.txt        (works)
+- os_and_sys.md (works)
+- os_and sys.md (works)
 
 
 Separated by dots or dashes:
 
-os.sys.txt       (ignored)
-os_ and .sys.txt (ignored)
-os-and-sys.md    (ignored)
+- os.sys.txt       (ignored)
+- os_ and .sys.txt (ignored)
+- os-and-sys.md    (ignored)
 
 
 Search query examples: 
