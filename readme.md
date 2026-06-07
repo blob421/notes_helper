@@ -26,7 +26,11 @@ Separated by dots or dashes:
 - os_ and .sys.txt (ignored)
 - os-and-sys.md    (ignored)
 
+Starting with numbers:
 
+- 0_import.txt     (comes first)
+- imports.md       (comes second)
+ 
 Search query examples: 
 -------------------------------------
 

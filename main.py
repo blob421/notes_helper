@@ -191,7 +191,7 @@ def search_inputs():
         
     if parsed > len(TEXT_MATCHES):
 
-        open_file(PATH_MATCHES[parsed - 1].get('path'))
+        open_file(PATH_MATCHES[(parsed - len(TEXT_MATCHES)) - 1].get('path'))
 
     else:
         open_file(TEXT_MATCHES[parsed - 1].get('path'))
