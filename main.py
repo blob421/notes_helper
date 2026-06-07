@@ -118,14 +118,15 @@ def search_inputs():
     PATH_MATCHES.clear()
     TEXT_MATCHES.clear()
 
-    string = input('\nSearch (e.g. tools docker) : ').strip().lower()
+    string = input('\nSearch (e.g. python core) : ').strip().lower()
     split_str = string.split(" ")
 
 
     for path in FILES:
         with open(path, 'r') as f:
             content = f.read().strip().lower()
-            words = content.split()
+            filtered_text = re.sub(r'[,:\.]', '', content)
+            words = filtered_text.split()
 
             subbed_path = re.sub(rf'(^{re.escape(CONFIG.get("path"))})(.+)', r'\2', path).lower()
             split_path = subbed_path.split(path_separator)
@@ -143,6 +144,9 @@ def search_inputs():
 
                 elif split_str[0] in split_path and split_str[1] in words:
                     update_results(path, 'text_match')
+
+                elif split_str[0] in split_path and split_str[1] in split_path:
+                    update_results(path, 'path_match')
             
             elif (string in split_path) or (string in filename_tokens):
 

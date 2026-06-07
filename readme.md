@@ -34,7 +34,7 @@ Starting with numbers:
 Search query examples: 
 -------------------------------------
 
-2 words (first word matches a folder name, second matches a filename or a word in a file): 
+2 words (first word matches a folder name, second matches a filename, dirname or a word in a file): 
 
 - python asyncio
 - javascript promise 
