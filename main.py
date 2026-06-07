@@ -13,7 +13,9 @@ current_dir = os.path.dirname(__file__)
 CONFIG_PATH = os.path.join(current_dir, 'config.json')
 CONFIG = {}
 FILES = set()
-RESULTS = []
+
+PATH_MATCHES = []
+TEXT_MATCHES = []
 
 def main():
     global CONFIG
@@ -99,9 +101,10 @@ def run_setup():
    
 
 def populate_files():
-    global FILES
+    global FILES, PATH_MATCHES, TEXT_MATCHES
     FILES.clear()
-    RESULTS.clear()
+    TEXT_MATCHES.clear()
+    PATH_MATCHES.clear()
 
     for root, _, files in os.walk(CONFIG.get('path')):
         for f in files:
@@ -111,8 +114,10 @@ def populate_files():
 
 
 def search_inputs():
-    global FILES, RESULTS
-    RESULTS.clear()
+    global FILES, PATH_MATCHES, TEXT_MATCHES
+    PATH_MATCHES.clear()
+    TEXT_MATCHES.clear()
+
     string = input('\nSearch (e.g. tools docker) : ').strip().lower()
     split_str = string.split(" ")
 
@@ -149,23 +154,26 @@ def search_inputs():
 
    
 
-    if not RESULTS: 
+    if not PATH_MATCHES and not TEXT_MATCHES: 
         print('No result matching query ...')
         return
     
-    RESULTS.sort(key=lambda x: x.get('type'), reverse=True)
-    sepatation_happened = False
 
-    if any([r.get('type')== 'text_match' for r in RESULTS]):
-         print(f'\n' + ('#' * 10) + ' TEXT MATCH ' + ('#' * 10) + '\n')
 
-    for idx, r in enumerate(RESULTS):
-        
-        if not sepatation_happened and r.get('type') == 'path_match':
-            print(f'\n' + ('#' * 10) + ' PATH MATCH ' + ('#' * 10) + '\n')
-            sepatation_happened = True
-        print(f"{idx + 1})  {r.get('filename')}")
+    if TEXT_MATCHES:
+        TEXT_MATCHES.sort(key=lambda x: x.get('filename'))
+        print(f'\n' + ('#' * 10) + ' TEXT MATCH ' + ('#' * 10) + '\n')
 
+        for idx, r in enumerate(TEXT_MATCHES):
+            print(f"{idx + 1})  {r.get('filename')}")
+
+
+    if PATH_MATCHES:
+        print(f'\n' + ('#' * 10) + ' PATH MATCH ' + ('#' * 10) + '\n')
+        PATH_MATCHES.sort(key=lambda x: x.get('filename'))
+
+        for idx, f in enumerate(PATH_MATCHES, start=len(TEXT_MATCHES)):
+             print(f"{idx + 1})  {f.get('filename')}")
         
     while True:
 
@@ -181,16 +189,20 @@ def search_inputs():
             print('Invalid number, try again ...')
             continue
         
+    if parsed > len(TEXT_MATCHES):
 
-    open_file(RESULTS[parsed - 1].get('path'))
+        open_file(PATH_MATCHES[parsed - 1].get('path'))
+
+    else:
+        open_file(TEXT_MATCHES[parsed - 1].get('path'))
     
            
 def update_results(path:str, type:str):
-    global RESULTS
+    global PATH_MATCHES, TEXT_MATCHES
     if type == 'path_match':
-        RESULTS.append({'filename': path.split(path_separator)[-1], 'path': path, 'type': 'path_match'})
+        PATH_MATCHES.append({'filename': path.split(path_separator)[-1], 'path': path, 'type': 'path_match'})
     else:
-        RESULTS.append({'filename': path.split(path_separator)[-1], 'path': path, 'type': 'text_match'})
+        TEXT_MATCHES.append({'filename': path.split(path_separator)[-1], 'path': path, 'type': 'text_match'})
 
 
 def open_file(path):
@@ -205,7 +217,8 @@ def get_filename_tokens(fname:str):
         return None
     
     if '-' in fname:
-        print(f'Dash detected in {fname}, only underscores or spaces are allowed ...')
+        if not 'safebackup' in fname:
+             print(f'Dash detected in {fname}, only underscores or spaces are allowed ...')
         return None        
     
     elif '_' in fname and not " " in fname:
