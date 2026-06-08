@@ -32,6 +32,11 @@ def main():
         try:
            search_inputs()
 
+        except FileNotFoundError:
+           print('\nSome files have changed , reloading ...')
+           populate_files()
+           continue
+
         except KeyboardInterrupt:
 
             while True:
