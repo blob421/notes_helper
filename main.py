@@ -32,10 +32,7 @@ def main():
         try:
            search_inputs()
 
-        except FileNotFoundError:
-           print('\nSome files have changed , reloading ...')
-           populate_files()
-           continue
+        
 
         except KeyboardInterrupt:
 
@@ -125,41 +122,48 @@ def search_inputs():
 
     string = input('\nSearch (e.g. python core) : ').strip().lower()
     split_str = string.split(" ")
+    while True:
+        try:
+            for path in FILES:
+                with open(path, 'r') as f:
+                    content = f.read().strip().lower()
+                    filtered_text = re.sub(r'[,:\.]', '', content)
+                    words = filtered_text.split()
 
+                    subbed_path = re.sub(rf'(^{re.escape(CONFIG.get("path"))})(.+)', r'\2', path).lower()
+                    split_path = subbed_path.split(path_separator)
 
-    for path in FILES:
-        with open(path, 'r') as f:
-            content = f.read().strip().lower()
-            filtered_text = re.sub(r'[,:\.]', '', content)
-            words = filtered_text.split()
+                    file_name = split_path[-1].split('.')[0]
+                    
+                    filename_tokens = get_filename_tokens(file_name)
+                    if not filename_tokens:
+                        continue
+                    
+                    if len(split_str) > 1:
+                        if split_str[0] in split_path and split_str[1] in filename_tokens:
+                        
+                            update_results(path, 'path_match')
 
-            subbed_path = re.sub(rf'(^{re.escape(CONFIG.get("path"))})(.+)', r'\2', path).lower()
-            split_path = subbed_path.split(path_separator)
+                        elif split_str[0] in split_path and split_str[1] in words:
+                            update_results(path, 'text_match')
 
-            file_name = split_path[-1].split('.')[0]
-            
-            filename_tokens = get_filename_tokens(file_name)
-            if not filename_tokens:
-                continue
-            
-            if len(split_str) > 1:
-                if split_str[0] in split_path and split_str[1] in filename_tokens:
-                 
-                    update_results(path, 'path_match')
+                        elif split_str[0] in split_path and split_str[1] in split_path:
+                            update_results(path, 'path_match')
+                    
+                    elif (string in split_path) or (string in filename_tokens):
 
-                elif split_str[0] in split_path and split_str[1] in words:
-                    update_results(path, 'text_match')
+                        update_results(path, 'path_match')
 
-                elif split_str[0] in split_path and split_str[1] in split_path:
-                    update_results(path, 'path_match')
-            
-            elif (string in split_path) or (string in filename_tokens):
+                    elif (string in words or string in filename_tokens):
+                        
+                        update_results(path, 'text_match')
 
-                update_results(path, 'path_match')
-
-            elif (string in words or string in filename_tokens):
-                
-                update_results(path, 'text_match')
+            break
+        
+        except FileNotFoundError:
+            print('\nSome files have changed , reloading ...')
+            populate_files()
+            continue
 
    
 
