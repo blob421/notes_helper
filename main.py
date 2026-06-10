@@ -130,7 +130,9 @@ def search_inputs():
                     filtered_text = re.sub(r'[,:\.]', '', content)
                     words = filtered_text.split()
 
-                    subbed_path = re.sub(rf'(^{re.escape(CONFIG.get("path"))})(.+)', r'\2', path).lower()
+                    sub_path = re.sub(rf'(^{re.escape(CONFIG.get("path"))})(.+)', r'\2', path)
+                    subbed_path = sub_path.lower()
+                    root = sub_path.split(path_separator)[0]
                     split_path = subbed_path.split(path_separator)
 
                     file_name = split_path[-1].split('.')[0]
@@ -142,21 +144,21 @@ def search_inputs():
                     if len(split_str) > 1:
                         if split_str[0] in split_path and split_str[1] in filename_tokens:
                         
-                            update_results(path, 'path_match')
+                            update_results(path, 'path_match', root)
 
                         elif split_str[0] in split_path and split_str[1] in words:
-                            update_results(path, 'text_match')
+                            update_results(path, 'text_match', root)
 
                         elif split_str[0] in split_path and split_str[1] in split_path:
-                            update_results(path, 'path_match')
+                            update_results(path, 'path_match', root)
                     
                     elif (string in split_path) or (string in filename_tokens):
 
-                        update_results(path, 'path_match')
+                        update_results(path, 'path_match', root)
 
                     elif (string in words or string in filename_tokens):
                         
-                        update_results(path, 'text_match')
+                        update_results(path, 'text_match', root)
 
             break
         
@@ -178,7 +180,7 @@ def search_inputs():
         print(f'\n' + ('#' * 10) + ' TEXT MATCH ' + ('#' * 10) + '\n')
 
         for idx, r in enumerate(TEXT_MATCHES):
-            print(f"{idx + 1})  {r.get('filename')}")
+            print(process_file(r, idx))
 
 
     if PATH_MATCHES:
@@ -186,7 +188,7 @@ def search_inputs():
         PATH_MATCHES.sort(key=lambda x: x.get('filename'))
 
         for idx, f in enumerate(PATH_MATCHES, start=len(TEXT_MATCHES)):
-             print(f"{idx + 1})  {f.get('filename')}")
+             print(process_file(f, idx))
         
     while True:
 
@@ -209,13 +211,22 @@ def search_inputs():
     else:
         open_file(TEXT_MATCHES[parsed - 1].get('path'))
     
-           
-def update_results(path:str, type:str):
+def process_file(r:dict, idx):
+    file_name = r.get('filename')
+    root = r.get('root')
+    parent_dir = r.get('path').split(path_separator)[-2]
+    helper_str = f"→ {root}\..\{parent_dir}" if root.lower() != parent_dir.lower() else f"→ {root}"
+    f_len = len(file_name)
+    return f"{idx + 1})" + " " * (4 - len(str(idx + 1))) + f"{file_name}" + " " * (30 - f_len) + helper_str
+
+def update_results(path:str, type:str, root:str):
     global PATH_MATCHES, TEXT_MATCHES
     if type == 'path_match':
-        PATH_MATCHES.append({'filename': path.split(path_separator)[-1], 'path': path, 'type': 'path_match'})
+        PATH_MATCHES.append({'filename': path.split(path_separator)[-1], 'path': path, 'type': 'path_match',
+                                                                         'root': root})
     else:
-        TEXT_MATCHES.append({'filename': path.split(path_separator)[-1], 'path': path, 'type': 'text_match'})
+        TEXT_MATCHES.append({'filename': path.split(path_separator)[-1], 'path': path, 'type': 'text_match',
+                                                                         'root': root})
 
 
 def open_file(path):
