@@ -12,8 +12,8 @@ current_dir = os.path.dirname(__file__)
 
 CONFIG_PATH = os.path.join(current_dir, 'config.json')
 CONFIG = {}
-FILES = set()
 
+FILES = ()
 PATH_MATCHES = []
 TEXT_MATCHES = []
 
@@ -39,13 +39,13 @@ def main():
             while True:
                 choice = input('\n\nDo you really want to quit ? (yes, no , reload) : ')
 
-                if choice.lower().strip() in ['y', 'yes']:
+                if choice.lower().strip() in ('y', 'yes'):
                     os._exit(0)
 
-                elif choice.lower().strip() in ['n', 'no']:
+                elif choice.lower().strip() in ('n', 'no'):
                     break
 
-                elif choice in ['r', 'reload']:
+                elif choice in ('r', 'reload'):
                     print('\nReloaded ...')
                     print('\n' + ('-' * 32) + '\n')
                     populate_files()
@@ -72,10 +72,10 @@ def load_config():
             while True:
                 
                 confirm = input('yes or no ? ')
-                if confirm.lower().strip() in ['y', 'yes']:
+                if confirm.lower().strip() in ('y', 'yes'):
                     break
 
-                elif confirm.lower().strip() in ['n', 'no']:
+                elif confirm.lower().strip() in ('n', 'no'):
                     config= run_setup()
                     
                 else: 
@@ -104,21 +104,24 @@ def run_setup():
 
 def populate_files():
     global FILES, PATH_MATCHES, TEXT_MATCHES
-    FILES.clear()
-    TEXT_MATCHES.clear()
-    PATH_MATCHES.clear()
+ 
+    PATH_MATCHES = []
+    TEXT_MATCHES = []
 
-    for root, _, files in os.walk(CONFIG.get('path')):
-        for f in files:
-            file_name = f
-            if file_name.endswith('.md') or file_name.endswith('.txt'):
-                FILES.add(os.path.join(root, file_name))
+   
+    FILES = tuple(
+        os.path.join(root, f)
+        for root, _, files in os.walk(CONFIG.get('path'))
+        for f in files
+        if f.endswith('.md') or f.endswith('.txt')
+    )         
+  
 
 
 def search_inputs():
     global FILES, PATH_MATCHES, TEXT_MATCHES
-    PATH_MATCHES.clear()
-    TEXT_MATCHES.clear()
+    PATH_MATCHES = []
+    TEXT_MATCHES = []
 
     string = input('\nSearch (e.g. python core) : ').strip().lower()
     split_str = string.split(" ")
@@ -140,17 +143,16 @@ def search_inputs():
                     filename_tokens = get_filename_tokens(file_name)
                     if not filename_tokens:
                         continue
-                    
+          
                     if len(split_str) > 1:
-                        if split_str[0] in split_path and split_str[1] in filename_tokens:
-                        
-                            update_results(path, 'path_match', root)
+                        if split_str[0] in split_path:
 
-                        elif split_str[0] in split_path and split_str[1] in words:
-                            update_results(path, 'text_match', root)
+                            if split_str[1] in (*filename_tokens, *split_path):
+                                update_results(path, 'path_match', root)
 
-                        elif split_str[0] in split_path and split_str[1] in split_path:
-                            update_results(path, 'path_match', root)
+                            elif split_str[1] in words:
+                                update_results(path, 'text_match', root)
+           
                     
                     elif (string in split_path) or (string in filename_tokens):
 
@@ -215,7 +217,7 @@ def process_file(r:dict, idx):
     file_name = r.get('filename')
     root = r.get('root')
     parent_dir = r.get('path').split(path_separator)[-2]
-    helper_str = f"→ {root}\..\{parent_dir}" if root.lower() != parent_dir.lower() else f"→ {root}"
+    helper_str = rf"→ {root}\..\{parent_dir}" if root.lower() != parent_dir.lower() else f"→ {root}"
     f_len = len(file_name)
     return f"{idx + 1})" + " " * (4 - len(str(idx + 1))) + f"{file_name}" + " " * (30 - f_len) + helper_str
 
