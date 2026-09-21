@@ -9,6 +9,12 @@ A simple script meant to help me find my notes quickly.
 - Searches for words in files 
 - Matches folders and file names
 
+Requirements
+------------------
+- Python 
+- Mousepad for linux or Notepad for Windows
+- For Linux , make the script executable and simply type the path to main.py in your terminal
+
 
 File naming convention:
 ------------------------------------
