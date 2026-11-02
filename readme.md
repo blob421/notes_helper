@@ -8,12 +8,13 @@ A simple script meant to help me find my notes quickly.
 
 - Searches for words in files 
 - Matches folders and file names
+- Helps creating notes 
 
 Requirements
 ------------------
 - Python 
 - Mousepad for linux or Notepad for Windows
-- For Linux , make the script executable and simply type the path to main.py in your terminal
+- For Linux , make the script executable and simply type the path to main.py in your terminal, do not run as sudo
 
 
 File naming convention:
@@ -51,3 +52,8 @@ Search query examples:
 - asyncio 
 - kubernetes 
 
+Note creation 
+---------------------------------------
+ 1. Search for an existing dir by name
+ 2. Create or select one 
+ 3. Name the new file.

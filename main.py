@@ -19,6 +19,7 @@ FILES = ()
 PATH_MATCHES = []
 TEXT_MATCHES = []
 
+
 def main():
     global CONFIG
     print("\n" + "#" * 32)
@@ -32,7 +33,29 @@ def main():
 
     while True:
         try:
-           search_inputs()
+            print('\n\n' + '=' * len('**** MAIN MENU ****'))
+            print('     MAIN MENU     ')
+            print('=' * len('**** MAIN MENU ****') + '\n')
+            print('0    Search')
+            print('1    Create')
+
+            while True:
+                choice = input('\n Choose an option : ')   
+                try:
+                    validated = int(choice.strip())
+                    if validated in (0,1):
+                        break
+                    print('\nError, choose an existing submenu')
+                    continue
+                except Exception:
+                    print('\nPlease choose a valid index number')
+                    continue
+
+            if validated == 1:
+               create_note()
+
+            if validated == 0:       
+               search_inputs()
 
         
 
@@ -118,102 +141,218 @@ def populate_files():
         if f.endswith('.md') or f.endswith('.txt')
     )         
   
+def create_note():
+    global CONFIG
+
+    while True:
+        full_dir = None
+        validated_choice = None
+        print('\n\n' + '=' * len('    NOTE CREATION    '))
+        print('    NOTE CREATION    ')
+        print('=' * len('    NOTE CREATION    '))
+        print('Press q to go back ')
+        location = input("\nSearch a directory (e.g. python), press enter for guidance : ")
+
+        if location.strip().lower() == 'q':
+            return
+        
+        known_folders = set()
+        root_folders = []
+    
+        
+        for idx, (dir_path, dirs,_) in enumerate(os.walk(CONFIG.get('path'))):
+            if idx == 0:
+                root_folders = dirs
+            for d in dirs:
+
+                full_path = os.path.join(dir_path, d)
+                known_folders.add(full_path.replace(CONFIG.get('path'), '').strip().lower())
+
+
+
+        if location == '':
+            print('\n')
+            for idx, m in enumerate(root_folders):
+                print(str(m))  
+
+            continue
+            
+
+        
+        else:
+            token_per_paths = {d: d.split('/') for d in known_folders}
+
+            match = [key for key, val in token_per_paths.items() if location.lower().strip() in val]
+        
+   
+
+        if match:
+    
+            match.sort()     
+
+            print('\n')
+            for idx, m in enumerate(match):
+                print(str(idx) + ((12 - len(str(idx))) * " ") + str(m))
+
+            while True:
+                choice = input('\nSelect a directory (0-999) : ')
+
+                if choice.strip().lower() == 'q':
+                    break
+                try:
+                    validated_choice = int(choice.strip())
+                    break
+
+                except Exception:
+                    print('\nPlease choose a valid index number')
+                    continue
+        else:
+            while True:
+          
+                path = input('\nNo match, enter a new path (e.g. "Python/Basics") : ')
+
+                if path.lower().strip() == 'q':
+                    break
+
+                path_regex = r'^[^/]+(/.+)?/?$'
+                if not re.match(path_regex, path):
+                    print('A relative path should follow this format : Python/Basics\n')
+                    continue
+               
+                full_dir = os.path.join(CONFIG.get('path'), path)
+                
+                os.makedirs(full_dir, exist_ok=True)
+                print(f'Created : {full_dir}')
+                break
+
+
+        if full_dir or validated_choice is not None:
+      
+            filename = input('\nName this note (e.g. new_note python) : ')
+
+            if filename == 'q':
+                continue
+             
+            full_path = os.path.join(full_dir, filename) if full_dir else os.path.join(CONFIG.get('path'),match[validated_choice], filename)
+
+            if not os.path.exists(full_path):
+                open(full_path, 'w')
+               
+
+            open_file(full_path)
+
+            return
 
 
 def search_inputs():
     global FILES, PATH_MATCHES, TEXT_MATCHES
-    PATH_MATCHES = []
-    TEXT_MATCHES = []
 
-    string = input('\nSearch (e.g. python core) : ').strip().lower()
-    split_str = string.split(" ")
+
+
     while True:
-        try:
-            for path in FILES:
-                with open(path, 'r') as f:
-                    content = f.read().strip().lower()
-                    filtered_text = re.sub(r'[,:\.]', '', content)
-                    words = filtered_text.split()
+        PATH_MATCHES = []
+        TEXT_MATCHES = []
+        parsed = None
+        print('\n\n' + '=' * len('    NOTE SEARCH    '))
+        print('    NOTE SEARCH    ')
+        print('=' * len('    NOTE SEARCH    '))
 
-                    sub_path = re.sub(rf'(^{re.escape(CONFIG.get("path"))})(.+)', r'\2', path)
-                    subbed_path = sub_path.lower()
-                    root = sub_path.split(path_separator)[0]
-                    split_path = subbed_path.split(path_separator)
+        while True:
+            
+            string = input('\nSearch (e.g. python core) or q : ').strip().lower()
 
-                    file_name = split_path[-1].split('.')[0]
-                    
-                    filename_tokens = get_filename_tokens(file_name)
-                    if not filename_tokens:
-                        continue
-          
-                    if len(split_str) > 1:
-                        if split_str[0] in split_path:
+            if string == 'q':
+                return
 
-                            if split_str[1] in (*filename_tokens, *split_path):
-                                update_results(path, 'path_match', root)
+            split_str = string.split(" ")
 
-                            elif split_str[1] in words:
-                                update_results(path, 'text_match', root)
-           
-                    
-                    elif (string in split_path) or (string in filename_tokens):
+            try:
+                for path in FILES:
+                    with open(path, 'r') as f:
+                        content = f.read().strip().lower()
+                        filtered_text = re.sub(r'[,:\.]', '', content)
+                        words = filtered_text.split()
 
-                        update_results(path, 'path_match', root)
+                        sub_path = re.sub(rf'(^{re.escape(CONFIG.get("path"))})(.+)', r'\2', path)
+                        subbed_path = sub_path.lower()
+                        root = sub_path.split(path_separator)[0]
+                        split_path = subbed_path.split(path_separator)
 
-                    elif (string in words or string in filename_tokens):
+                        file_name = split_path[-1].split('.')[0]
                         
-                        update_results(path, 'text_match', root)
+                        filename_tokens = get_filename_tokens(file_name)
+                        if not filename_tokens:
+                            continue
+            
+                        if len(split_str) > 1:
+                            if split_str[0] in split_path:
 
-            break
-        
-        except FileNotFoundError:
-            print('\nSome files have changed , reloading ...')
-            populate_files()
-            continue
+                                if split_str[1] in (*filename_tokens, *split_path):
+                                    update_results(path, 'path_match', root)
+
+                                elif split_str[1] in words:
+                                    update_results(path, 'text_match', root)
+            
+                        
+                        elif (string in split_path) or (string in filename_tokens):
+
+                            update_results(path, 'path_match', root)
+
+                        elif (string in words or string in filename_tokens):
+                            
+                            update_results(path, 'text_match', root)
+
+                break
+            
+            except FileNotFoundError:
+                print('\nSome files have changed , reloading ...')
+                populate_files()
+                continue
 
    
 
-    if not PATH_MATCHES and not TEXT_MATCHES: 
-        print('No result matching query ...')
-        return
-    
-
-
-    if TEXT_MATCHES:
-        TEXT_MATCHES.sort(key=lambda x: x.get('filename'))
-        print(f'\n' + ('#' * 10) + ' TEXT MATCH ' + ('#' * 10) + '\n')
-
-        for idx, r in enumerate(TEXT_MATCHES):
-            print(process_file(r, idx))
-
-
-    if PATH_MATCHES:
-        print(f'\n' + ('#' * 10) + ' PATH MATCH ' + ('#' * 10) + '\n')
-        PATH_MATCHES.sort(key=lambda x: x.get('filename'))
-
-        for idx, f in enumerate(PATH_MATCHES, start=len(TEXT_MATCHES)):
-             print(process_file(f, idx))
-        
-    while True:
-
-        index = input('\n\nEnter a number or press "q" to go back : ')
-        print('-' * len('Enter a number or press "q" to go back :  '))
-        if index.strip().lower() == 'q':
-            return
-
-        try:
-            parsed = int(index.lower().strip())
-            break
-        except:
-            print('Invalid number, try again ...')
+        if not PATH_MATCHES and not TEXT_MATCHES: 
+            print('No result matching query ...')
             continue
         
-    if parsed > len(TEXT_MATCHES):
 
-        open_file(PATH_MATCHES[(parsed - len(TEXT_MATCHES)) - 1].get('path'))
 
-    else:
-        open_file(TEXT_MATCHES[parsed - 1].get('path'))
+        if TEXT_MATCHES:
+            TEXT_MATCHES.sort(key=lambda x: x.get('filename'))
+            print(f'\n' + ('#' * 10) + ' TEXT MATCH ' + ('#' * 10) + '\n')
+
+            for idx, r in enumerate(TEXT_MATCHES):
+                print(process_file(r, idx))
+
+
+        if PATH_MATCHES:
+            print(f'\n' + ('#' * 10) + ' PATH MATCH ' + ('#' * 10) + '\n')
+            PATH_MATCHES.sort(key=lambda x: x.get('filename'))
+
+            for idx, f in enumerate(PATH_MATCHES, start=len(TEXT_MATCHES)):
+                print(process_file(f, idx))
+            
+        while True:
+
+            index = input('\n\nEnter a number or press "q" to go back : ')
+            print('-' * len('Enter a number or press "q" to go back :  '))
+
+            if index.strip().lower() == 'q':
+                break
+
+            try:
+                parsed = int(index.lower().strip())
+                break
+            except:
+                print('Invalid number, try again ...')
+                continue
+            
+        if parsed and parsed > len(TEXT_MATCHES):
+
+            open_file(PATH_MATCHES[(parsed - len(TEXT_MATCHES)) - 1].get('path'))
+
+        elif parsed:
+            open_file(TEXT_MATCHES[parsed - 1].get('path'))
     
 def process_file(r:dict, idx):
     file_name = r.get('filename')
