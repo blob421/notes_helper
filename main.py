@@ -7,7 +7,7 @@ import sys
 
 is_windows_os = sys.platform.startswith('win')
 
-path_separator = '/' if not is_windows_os else '\\'
+path_separator = os.sep
 import re
 
 current_dir = os.path.dirname(__file__)
@@ -15,13 +15,18 @@ current_dir = os.path.dirname(__file__)
 CONFIG_PATH = os.path.join(current_dir, 'config.json')
 CONFIG = {}
 
+ROOT_DIR = None
+
 FILES = ()
+FILES_CACHE = {}
 PATH_MATCHES = []
 TEXT_MATCHES = []
 
+PATH_REGEX = re.compile(r'^[^/]+(/.+)?/?$')
+TEXT_REGEX = re.compile(r'[,:\.]')
 
 def main():
-    global CONFIG
+    global CONFIG, ROOT_DIR
     print("\n" + "#" * 32)
     print(('-' * 10) + 'NOTES HELPER' + ('-' * 10))
     print("#" * 32 + "\n")
@@ -29,6 +34,7 @@ def main():
 
 
     CONFIG = load_config()
+    ROOT_DIR = CONFIG.get('path')
     populate_files()
 
     while True:
@@ -128,18 +134,37 @@ def run_setup():
    
 
 def populate_files():
-    global FILES, PATH_MATCHES, TEXT_MATCHES
- 
+    global FILES, PATH_MATCHES, TEXT_MATCHES, FILES_CACHE
+    FILES_CACHE = {}
     PATH_MATCHES = []
     TEXT_MATCHES = []
-
-   
+    
     FILES = tuple(
         os.path.join(root, f)
-        for root, _, files in os.walk(CONFIG.get('path'))
+        for root, _, files in os.walk(ROOT_DIR)
         for f in files
         if f.endswith('.md') or f.endswith('.txt')
-    )         
+    )    
+
+    for f in FILES:
+        with open(f, 'r') as c:
+            
+            content = c.read().strip().lower()
+            words  = TEXT_REGEX.sub("", content).split()
+ 
+            sub_path = f.replace(ROOT_DIR, '')
+            subbed_path = sub_path.lower()
+
+            root = sub_path.split(path_separator)[0]
+
+            split_path = subbed_path.split(path_separator)
+
+            file_name = split_path[-1].split('.')[0]
+            
+            filename_tokens = get_filename_tokens(file_name)
+
+            FILES_CACHE[f] = {'root': root, 'tokens': filename_tokens, 'split_path': split_path, 'words': words}
+
   
 def create_note():
     global CONFIG
@@ -160,13 +185,13 @@ def create_note():
         root_folders = []
     
         
-        for idx, (dir_path, dirs,_) in enumerate(os.walk(CONFIG.get('path'))):
+        for idx, (dir_path, dirs,_) in enumerate(os.walk(ROOT_DIR)):
             if idx == 0:
                 root_folders = dirs
             for d in dirs:
 
                 full_path = os.path.join(dir_path, d)
-                known_folders.add(full_path.replace(CONFIG.get('path'), '').strip().lower())
+                known_folders.add(full_path.replace(ROOT_DIR, '').strip().lower())
 
 
 
@@ -180,7 +205,7 @@ def create_note():
 
         
         else:
-            token_per_paths = {d: d.split('/') for d in known_folders}
+            token_per_paths = {d: d.split(path_separator) for d in known_folders}
 
             match = [key for key, val in token_per_paths.items() if location.lower().strip() in val]
         
@@ -214,12 +239,12 @@ def create_note():
                 if path.lower().strip() == 'q':
                     break
 
-                path_regex = r'^[^/]+(/.+)?/?$'
-                if not re.match(path_regex, path):
+
+                if not PATH_REGEX.match(path):
                     print('A relative path should follow this format : Python/Basics\n')
                     continue
                
-                full_dir = os.path.join(CONFIG.get('path'), path)
+                full_dir = os.path.join(ROOT_DIR, path)
                 
                 os.makedirs(full_dir, exist_ok=True)
                 print(f'Created : {full_dir}')
@@ -233,7 +258,7 @@ def create_note():
             if filename == 'q':
                 continue
              
-            full_path = os.path.join(full_dir, filename) if full_dir else os.path.join(CONFIG.get('path'),match[validated_choice], filename)
+            full_path = os.path.join(full_dir, filename) if full_dir else os.path.join(ROOT_DIR, match[validated_choice], filename)
 
             if not os.path.exists(full_path):
                 open(full_path, 'w')
@@ -245,7 +270,7 @@ def create_note():
 
 
 def search_inputs():
-    global FILES, PATH_MATCHES, TEXT_MATCHES
+    global PATH_MATCHES, TEXT_MATCHES
 
 
 
@@ -267,23 +292,19 @@ def search_inputs():
             split_str = string.split(" ")
 
             try:
-                for path in FILES:
-                    with open(path, 'r') as f:
-                        content = f.read().strip().lower()
-                        filtered_text = re.sub(r'[,:\.]', '', content)
-                        words = filtered_text.split()
+                for path, data in FILES_CACHE.items():
+                   
 
-                        sub_path = re.sub(rf'(^{re.escape(CONFIG.get("path"))})(.+)', r'\2', path)
-                        subbed_path = sub_path.lower()
-                        root = sub_path.split(path_separator)[0]
-                        split_path = subbed_path.split(path_separator)
+                        filename_tokens = data.get('tokens', None)
 
-                        file_name = split_path[-1].split('.')[0]
-                        
-                        filename_tokens = get_filename_tokens(file_name)
                         if not filename_tokens:
                             continue
-            
+
+                        words = data.get('words')
+                        root = data.get('root')
+                        split_path = data.get('split_path')
+
+
                         if len(split_str) > 1:
                             if split_str[0] in split_path:
 
@@ -341,18 +362,24 @@ def search_inputs():
                 break
 
             try:
-                parsed = int(index.lower().strip())
+                parsed = int(index.strip())
+
+
+                if parsed > len(TEXT_MATCHES):
+
+                    open_file(PATH_MATCHES[(parsed - len(TEXT_MATCHES)) - 1].get('path'))
+
+                elif parsed > 0:
+                    open_file(TEXT_MATCHES[parsed - 1].get('path'))
+
+                else:
+                    continue
+
                 break
+
             except:
                 print('Invalid number, try again ...')
                 continue
-            
-        if parsed and parsed > len(TEXT_MATCHES):
-
-            open_file(PATH_MATCHES[(parsed - len(TEXT_MATCHES)) - 1].get('path'))
-
-        elif parsed:
-            open_file(TEXT_MATCHES[parsed - 1].get('path'))
     
 def process_file(r:dict, idx):
     file_name = r.get('filename')
