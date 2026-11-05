@@ -257,6 +257,9 @@ def create_note():
 
             if filename == 'q':
                 continue
+
+            if not '.txt' or not '.md' in filename:
+                filename += '.txt'
              
             full_path = os.path.join(full_dir, filename) if full_dir else os.path.join(ROOT_DIR, match[validated_choice], filename)
 
