@@ -150,14 +150,14 @@ def populate_files():
         with open(f, 'r') as c:
             
             content = c.read().strip().lower()
-            words  = TEXT_REGEX.sub("", content).split()
+            words  = set(TEXT_REGEX.sub("", content).split())
  
             sub_path = f.replace(ROOT_DIR, '')
-            subbed_path = sub_path.lower()
+            subbed_path = sub_path
 
             root = sub_path.split(path_separator)[0]
 
-            split_path = subbed_path.split(path_separator)
+            split_path = subbed_path.lower().split(path_separator)
 
             file_name = split_path[-1].split('.')[0]
             
@@ -191,7 +191,7 @@ def create_note():
             for d in dirs:
 
                 full_path = os.path.join(dir_path, d)
-                known_folders.add(full_path.replace(ROOT_DIR, '').strip().lower())
+                known_folders.add(full_path.replace(ROOT_DIR, '').strip())
 
 
 
@@ -207,7 +207,7 @@ def create_note():
         else:
             token_per_paths = {d: d.split(path_separator) for d in known_folders}
 
-            match = [key for key, val in token_per_paths.items() if location.lower().strip() in val]
+            match = [key for key, val in token_per_paths.items() if location.lower().strip() in set(v.lower() for v in val)]
         
    
 
