@@ -133,20 +133,10 @@ def run_setup():
     return {'path': note_folder}
    
 
-def populate_files():
-    global FILES, PATH_MATCHES, TEXT_MATCHES, FILES_CACHE
-    FILES_CACHE = {}
-    PATH_MATCHES = []
-    TEXT_MATCHES = []
-    
-    FILES = tuple(
-        os.path.join(root, f)
-        for root, _, files in os.walk(ROOT_DIR)
-        for f in files
-        if f.endswith('.md') or f.endswith('.txt')
-    )    
+def prepare_files(files:str):
+  global FILES_CACHE
 
-    for f in FILES:
+  for f in files:
         with open(f, 'r') as c:
             
             content = c.read().strip().lower()
@@ -164,6 +154,27 @@ def populate_files():
             filename_tokens = get_filename_tokens(file_name)
 
             FILES_CACHE[f] = {'root': root, 'tokens': filename_tokens, 'split_path': split_path, 'words': words}
+
+
+def populate_files(file_path:str=None):
+    global FILES, PATH_MATCHES, TEXT_MATCHES, FILES_CACHE
+
+    if not file_path:
+        FILES_CACHE = {}
+        PATH_MATCHES = []
+        TEXT_MATCHES = []
+        
+        FILES = tuple(
+            os.path.join(root, f)
+            for root, _, files in os.walk(ROOT_DIR)
+            for f in files
+            if f.endswith('.md') or f.endswith('.txt')
+        )    
+
+    else:
+        FILES = [file_path]
+
+    prepare_files(FILES)
 
   
 def create_note():
@@ -269,7 +280,8 @@ def create_note():
 
             open_file(full_path)
 
-            return
+            populate_files(full_path) ### Adds file to Cache
+            return 
 
 
 def search_inputs():
